@@ -16,6 +16,7 @@ public class BalancerController {
     public String login(HttpServletRequest request, Model model) {
         String sessionId = request.getSession(true).getId();
         model.addAttribute("sessionId", sessionId);
+        System.out.print("Current port is" + request.getContextPath() + "/n");
         return "index";
     }
 

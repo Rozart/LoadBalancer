@@ -16,6 +16,7 @@ import org.apache.ignite.startup.servlet.ServletContextListenerStartup;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 
@@ -24,6 +25,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 
 @SpringBootApplication
@@ -31,32 +34,18 @@ public class LoadBalancerApplication extends SpringBootServletInitializer{
 
 	public static void main(String[] args) {
 		SpringApplication.run(LoadBalancerApplication.class, args);
-		Ignite ignite= Ignition.start(igniteConfiguration());
+		//Ignite ignite= Ignition.start(igniteConfiguration());
 	}
 
-	public static IgniteConfiguration igniteConfiguration() {
+    public static IgniteConfiguration igniteConfiguration() {
 		IgniteConfiguration igniteConfiguration = new IgniteConfiguration();
 
-		igniteConfiguration.setClientMode(false);
-
-//		RoundRobinLoadBalancingSpi loadBalancingSpi = new RoundRobinLoadBalancingSpi();
-//		loadBalancingSpi.setPerTask(true);
-//		igniteConfiguration.setLoadBalancingSpi(loadBalancingSpi);
+		igniteConfiguration.setClientMode(true);
 
 		TcpCommunicationSpi communicationSpi = new TcpCommunicationSpi();
-		communicationSpi.setLocalPort(6543);
+		communicationSpi.setLocalPort(7654);
 		igniteConfiguration.setCommunicationSpi(communicationSpi);
 
-//		TcpDiscoverySpi discoverySpi = new TcpDiscoverySpi();
-//		TcpDiscoveryIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-//		List<InetSocketAddress> addresses = new ArrayList<>();
-//		InetSocketAddress address1 = new InetSocketAddress("127.0.0.1", 47100);
-//		InetSocketAddress address2 = new InetSocketAddress("127.0.0.1", 47500);
-//		addresses.add(address1);
-//		addresses.add(address2);
-//		ipFinder.registerAddresses(addresses);
-//		discoverySpi.setIpFinder(ipFinder);
-//		igniteConfiguration.setDiscoverySpi(discoverySpi);
 
 		CacheConfiguration cacheConfiguration = new CacheConfiguration();
 		cacheConfiguration.setName("balancerCache");
@@ -69,14 +58,29 @@ public class LoadBalancerApplication extends SpringBootServletInitializer{
 
 	@Override
 	public void onStartup(ServletContext servletContext) throws ServletException {
-		servletContext.addFilter("IgniteWebSessionFilter", igniteWebSessionFilter());
-		servletContext.addListener(ServletContextListenerStartup.class);
+		//servletContext.addFilter("IgniteWebSessionFilter", igniteWebSessionFilter());
+
+		//servletContext.addListener(ServletContextListenerStartup.class);
 		super.onStartup(servletContext);
 	}
 
-	public WebSessionFilter igniteWebSessionFilter() {
-		WebSessionFilter webSessionFilter = new WebSessionFilter();
-		return webSessionFilter;
-	}
+    @Bean
+    public ServletContextListenerStartup servletContextListenerStartup(){
+        ServletContextListenerStartup servletContextListenerStartup = new ServletContextListenerStartup();
+        return servletContextListenerStartup;
+    }
+
+    @Bean
+    public FilterRegistrationBean filterRegistrationBean () {
+
+        WebSessionFilter webSessionFilter = new WebSessionFilter();
+
+        FilterRegistrationBean registrationBean = new FilterRegistrationBean();
+
+        registrationBean.setFilter(webSessionFilter);
+        registrationBean.setUrlPatterns(Arrays.asList("/*"));
+
+        return registrationBean;
+    }
 
 }
